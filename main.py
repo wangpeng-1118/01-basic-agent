@@ -9,24 +9,16 @@ client = OpenAI(
 )
 
 
-def get_weather(city):
-    """查询天气"""
-    weather_data = {
-        "北京": "晴，25°C",
-        "上海": "多云，27°C",
-        "武汉": "小雨，23°C",
-    }
-
-    return weather_data.get(city, f"暂时没有{city}的天气数据")
-
-
 def main():
+    user_input = input("User: ")
+    content = user_input
+
     response = client.chat.completions.create(
         model="deepseek-flash",
         messages=[
             {
                 "role": "user",
-                "content": "北京今天天气怎么样？",
+                "content": content,
             }
         ],
         tools=[
@@ -46,6 +38,23 @@ def main():
                         "required": ["city"],
                     },
                 },
+            },
+
+            {
+                "type": "function",
+                "function": {
+                    "name": "calculate",
+                    "description": "计算数学表达式",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "expression": {
+                                "type": "string"
+                            }
+                        },
+                        "required": ["expression"]
+                    }
+                }
             }
         ],
     )
@@ -75,7 +84,7 @@ def main():
         messages = [
             {
                 "role": "user",
-                "content": "北京今天天气怎么样？",
+                "content": content,
             },
             message,
             {
