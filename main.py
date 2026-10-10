@@ -1,6 +1,7 @@
 from openai import OpenAI
 import os
 import json
+from tools import TOOLS
 
 client = OpenAI(
     api_key=os.environ.get("DEEPSEEK_API_KEY"),
@@ -66,38 +67,33 @@ def main():
         print("模型的选择工具：", tool_name)
         print("模型提供的参数：", arguments)
 
-        # 真正执行python 函数
-        if tool_name == "get_weather":
-            result = get_weather(
-                arguments["city"]
-            )
+        
+        tool_function = TOOLS[tool_name]
+        result = tool_function(**arguments)
 
-            print("工具执行结果：", result)
+        # 将工具执行的结果传给LLM，得到LLM最终的输出
+        messages = [
+            {
+                "role": "user",
+                "content": "北京今天天气怎么样？",
+            },
+            message,
+            {
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": result,
+            },
+        ]
 
-            # 将工具执行的结果传给LLM，得到LLM最终的输出
-            messages = [
-                {
-                    "role": "user",
-                    "content": "北京今天天气怎么样？",
-                },
-                message,
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": result,
-                },
-            ]
+        final_response = client.chat.completions.create(
+            model="deepseek-flash",
+            messages=messages,
+        )
 
-            final_response = client.chat.completions.create(
-                model="deepseek-flash",
-                messages=messages,
-            )
-
-            print(
-                "final_answer:", final_response.choices[0].message.content
-            )
+        print(
+            "final_answer:", final_response.choices[0].message.content
+        )
 
 
 if __name__ == "__main__":
-
     main()
