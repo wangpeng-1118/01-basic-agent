@@ -1,7 +1,10 @@
-from .weather import get_weather
-from .calculator import calculate
+from .registry import (
+    TOOLS,
+    TOOL_SCHEMAS
+)
 
-TOOLS = {
-    "get_weather": get_weather,
-    "calculate": calculate
-}
+
+__all__ = [
+    "TOOLS",
+    "TOOL_SCHEMAS"
+]
