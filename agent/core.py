@@ -1,5 +1,5 @@
 import json
-from .session import Session
+from .session_manager import SessionManager
 
 class Agent:
 
@@ -15,23 +15,28 @@ class Agent:
         self.tool_schemas = tool_schemas
         self.model = model
 
-        # 创建一个会话
-        self.session = Session()
+        # Session管理器
+        self.session_manager = SessionManager()
 
     
-    def run(self, user_input):
+    def run(self, user_input, session_id="default"):
+        
+        session = self.session_manager.get_session(
+            session_id
+        )
+
         user_message = {
             "role": "user",
             "content": user_input
         }
-        self.session.add_message(
+        session.add_message(
             user_message
         )
         
-
+        # 调用LLM
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=self.session.get_messages(),
+            messages=session.get_messages(),
             tools=self.tool_schemas
         )
 
@@ -83,14 +88,15 @@ class Agent:
                         }
                 )
             
-            self.session.add_message(
+            # 保存assistant message
+            session.add_message(
                 assistant_message
             )
             
             # 保存工具结果
             for tool_message in tool_messages:
 
-                self.session.add_message(
+                session.add_message(
                     tool_message
                 )
             
@@ -105,7 +111,7 @@ class Agent:
             final_message = (final_response.choices[0].message.content)
 
             # 保存最终回答
-            self.session.add_message(
+            session.add_message(
                 {
                     "role":"assistant",
                     "content":final_message
@@ -117,7 +123,7 @@ class Agent:
             
             answer = message.content
 
-            self.session.add_message(
+            session.add_message(
                 {
                     "role":"assistant",
                     "content":answer

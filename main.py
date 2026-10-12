@@ -18,9 +18,12 @@ def main():
     )
 
     while True:
-        user_input=input("User:")
 
-        answer=agent.run(user_input)
+        user_id = input("User ID:")
+
+        user_input=input("Message:")
+
+        answer=agent.run(user_input, session_id=user_id)
 
         print("Agent:", answer)
 
