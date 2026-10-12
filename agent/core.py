@@ -1,4 +1,5 @@
 import json
+from .session import Session
 
 class Agent:
 
@@ -14,37 +15,55 @@ class Agent:
         self.tool_schemas = tool_schemas
         self.model = model
 
-        # 保存上下文
-        self.messages = []
+        # 创建一个会话
+        self.session = Session()
+
     
     def run(self, user_input):
-        # 原始输入给LLM的message
-        self.messages.append(
-            {
-                "role":"user",
-                "content":user_input
-            }
+        user_message = {
+            "role": "user",
+            "content": user_input
+        }
+        self.session.add_message(
+            user_message
         )
+        
 
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=self.messages,
+            messages=self.session.get_messages(),
             tools=self.tool_schemas
         )
 
         # response中的message，里面包含LLM返回的tool工具调用相关的信息
         message = response.choices[0].message
 
-        #遍历所有的tool调用
         if message.tool_calls:
 
             tool_messages = []
 
+            assistant_message = {
+                "role": "assistant",
+                "content":"",
+                "tool_calls":[]
+            }
+            # 遍历所有工具的调用
             for tool_call in message.tool_calls:
 
-                tool_name = (
-                    tool_call.function.name
+                assistant_message["tool_calls"].append(
+                    {
+                        "id":tool_call.id,
+                        "type":"function",
+                        "function":{
+                            "name":
+                            tool_call.function.name,
+                            "arguments":
+                            tool_call.function.arguments
+                        }
+                    }
                 )
+
+                tool_name = tool_call.function.name
 
                 arguments = json.loads(
                     tool_call.function.arguments
@@ -63,45 +82,49 @@ class Agent:
                             "content":result
                         }
                 )
-
-            assistant_message = message.model_dump()
-
-            if assistant_message["content"] is None:
-                assistant_message["content"] = ""
             
-            self.messages.extend(
-                [
-                    assistant_message,
-                    *tool_messages
-                ]
+            self.session.add_message(
+                assistant_message
             )
+            
+            # 保存工具结果
+            for tool_message in tool_messages:
 
-            # self.messages.extend(
-            #     [
-            #         message,
-            #         *tool_messages
-            #     ]
-            # )
-
-            # #测试
-            # print(json.dumps(
-            #     messages,
-            #     indent=4,
-            #     ensure_ascii=False,
-            #     default=str
-            # ))
+                self.session.add_message(
+                    tool_message
+                )
+            
 
             final_response = (
                 self.client.chat.completions.create(
                     model=self.model,
-                    messages=messages
+                    messages=self.session.get_messages()
                 )
             )
 
-            return (final_response.choices[0].message.content)
-        else:
-            return message.content
+            final_message = (final_response.choices[0].message.content)
 
+            # 保存最终回答
+            self.session.add_message(
+                {
+                    "role":"assistant",
+                    "content":final_message
+                }
+            )
+
+            return final_message
+        else:
+            
+            answer = message.content
+
+            self.session.add_message(
+                {
+                    "role":"assistant",
+                    "content":answer
+                }
+            )
+
+            return answer
 
 
 
