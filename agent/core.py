@@ -13,25 +13,28 @@ class Agent:
         self.tools = tools
         self.tool_schemas = tool_schemas
         self.model = model
+
+        # 保存上下文
+        self.messages = []
     
     def run(self, user_input):
         # 原始输入给LLM的message
-        messages = [
+        self.messages.append(
             {
                 "role":"user",
                 "content":user_input
             }
-        ]
+        )
 
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=messages,
+            messages=self.messages,
             tools=self.tool_schemas
         )
 
         # response中的message，里面包含LLM返回的tool工具调用相关的信息
         message = response.choices[0].message
-        
+
         #遍历所有的tool调用
         if message.tool_calls:
 
@@ -61,24 +64,24 @@ class Agent:
                         }
                 )
 
-            # assistant_message = message.model_dump()
+            assistant_message = message.model_dump()
 
-            # if assistant_message["content"] is None:
-            #     assistant_message["content"] = ""
+            if assistant_message["content"] is None:
+                assistant_message["content"] = ""
             
-            # messages.extend(
-            #     [
-            #         assistant_message,
-            #         *tool_messages
-            #     ]
-            # )
-
-            messages.extend(
+            self.messages.extend(
                 [
-                    message,
+                    assistant_message,
                     *tool_messages
                 ]
             )
+
+            # self.messages.extend(
+            #     [
+            #         message,
+            #         *tool_messages
+            #     ]
+            # )
 
             # #测试
             # print(json.dumps(
