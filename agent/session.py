@@ -1,25 +1,27 @@
+from .context import ContextManager
+
 class Session:
     """
     管理一次用户会话的上下文
     """
 
-    def __init__(self, max_messages=20):
+    def __init__(self, max_messages=5):
         # 保存聊天记录
         self.messages = []
 
-        # 最大保存消息数量
-        self.max_messages = max_messages
+        self.context_manager = ContextManager()
+
 
 
     def add_message(self, message):
         """
         添加一条消息
         """
-
         self.messages.append(message)
 
-        # 控制上下文长度
-        self.trim()
+        self.message = (
+            self.context_manager.compress(self.messages)
+        )
 
 
     def get_messages(self):
@@ -28,20 +30,6 @@ class Session:
         """
 
         return self.messages
-
-
-    def trim(self):
-        """
-        简单的上下文窗口控制
-
-        保留最近 max_messages 条消息
-        """
-
-        if len(self.messages) > self.max_messages:
-
-            self.messages = (
-                self.messages[-self.max_messages:]
-            )
 
 
     def clear(self):
