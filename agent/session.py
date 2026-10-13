@@ -5,11 +5,11 @@ class Session:
     管理一次用户会话的上下文
     """
 
-    def __init__(self, max_messages=5):
+    def __init__(self):
         # 保存聊天记录
         self.messages = []
 
-        self.context_manager = ContextManager()
+        self.context_manager = ContextManager(max_messages=20)
 
 
 
@@ -19,7 +19,7 @@ class Session:
         """
         self.messages.append(message)
 
-        self.message = (
+        self.messages = (
             self.context_manager.compress(self.messages)
         )
 
