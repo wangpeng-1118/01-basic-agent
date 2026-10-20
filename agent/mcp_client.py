@@ -40,6 +40,22 @@ class MCPClient:
 
         await self.session.initialize()
 
+    async def disconnect(self):
+        """关闭 MCP 会话和传输连接"""
+        try: 
+            if self.session is not None:
+                await self.session.__aexit__(None, None, None)
+                self.session = None
+                print("[MCP] ClientSession 已关闭")
+
+        finally:
+            if getattr(self, "stdio_transport", None) is not None:
+                await self.stdio_transport.__aexit__(
+                    None,None,None
+                )
+                self.stdio_transport = None
+                print("[MCP] stdio 连接已关闭")
+
     async def list_tools(self):
 
         response = await(
