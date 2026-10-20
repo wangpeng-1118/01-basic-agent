@@ -1,13 +1,15 @@
-from mcp.server.mcpserver import MCPServer
-
+from mcp.server import MCPServer
+import asyncio
 
 server = MCPServer(
-    name="weather-server"
+    name="weather-server",
+    version="1.0.0",
+    description="Weather query MCP Server"
 )
 
 
 @server.tool()
-def get_weather(city: str) -> str:
+async def mcp_get_weather(city: str) -> str:
     """
     查询城市天气
     """
@@ -20,9 +22,14 @@ def get_weather(city: str) -> str:
 
     return weather_data.get(
         city,
-        f"暂无{city}天气数据"
+        f"暂无 {city} 的天气信息"
     )
 
 
+async def main():
+
+    await server.run_stdio_async()
+
+
 if __name__ == "__main__":
-    server.run()
+    asyncio.run(main())
